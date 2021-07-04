@@ -56,13 +56,13 @@ Ouput : 判断该word属于每个slot的probability distribution
 
 每次输入一个input(是一个word而不是一组word) $x^i$， 然后得到hidden layer的output $a^i$, 以及最终的output $y_i$, 下一个输入的 $x^{i+1}$在计算 $a^{i+1}$的时候会用到 $a^i$, 以此类推.
 
-<center><image src="./image/RNNslot.jpeg" width="60%"></center>
+<center><image src="./image/rnnslot.jpeg" width="60%"></center>
 
 此时，即使输入同样是“Taipei”，我们依旧可以根据前文的“leave”或“arrive”来得到不一样的输出。
 
 当然，可以使网络更deep，因为就会有多层的memory。
 
-<center><image src="./image/RNNslot2.jpeg" width="60%"></center>
+<center><image src="./image/rnnslot2.jpeg" width="60%"></center>
 
 ### Elman/Jordan Network
 
