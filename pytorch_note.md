@@ -61,6 +61,16 @@ Data Augumentation 只针对 train set做，validation和test都不做。
 
 `collate_fn` : 传入函数句柄，操作每个batch。
 
+**使用**
+
+```python
+for i, data in enumerate(train_loader)：
+	train_pre = model(data[0])
+    train_label = data[1]
+```
+
+
+
 
 
 
@@ -166,4 +176,60 @@ named_modules()返回的每一个元素是一个元组，第一个元素是名�
 `torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)`
 
 `torch.nn.MaxPool2d(kernel_size, stride, padding)`
+
+`torch.nn.BatchNorm2d(num_features)`
+
+CNN的output后面接fc要在view里面 `out.view(out.size()[0], -1)`
+
+
+
+### Model的模式
+
+**model.train() 与 model.eval()的区别**
+
+
+
+## Train
+
+> train 包含几个内容
+>
+> 1. loss 
+> 2. optimizer
+> 3.  train
+
+### loss
+
+训练 ： `batch_loss = loss(xxx)`  +  `loss.backworad()`  **计算了每个参数的gradient**
+
+获取loss ： `loss.item()`  loss本身是一个Tensor
+
+### optimizer
+
+` torch.optim.Adam(model.parameters(), lr=0.001)` + `optimizer.step()  `**step是更新参数，根据backward获得的gradient**
+
+
+
+### train
+
+**步骤**
+
+1. `model.train()`
+
+2. 每次train一个batch之前，要先 `optimizer.zero_grad()`
+
+3. 传入数据 + 计算loss +  `loss.backword()`  + `optimizer.step()`
+
+
+
+
+
+
+
+## Device
+
+> 主要是针对能否用GPU进行计算
+
+`device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")`
+
+`model = CNNClassifier().to(device)`
 
