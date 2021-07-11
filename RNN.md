@@ -209,3 +209,7 @@ GRU的效果和LSTM差不多，但是少了1/4的参数
 
 <center><image src="./image/rnn_lstm7.jpeg" width="60%"></center>
 
+
+
+## Learning Target
+
