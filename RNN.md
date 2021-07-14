@@ -213,6 +213,7 @@ GRU的效果和LSTM差不多，但是少了1/4的参数
 
 ## Learning Target
 
+<<<<<<< HEAD
 > 如何训练RNN
 
 ### Loss Function
@@ -440,3 +441,5 @@ Seq2Seq autoencoder还可以用在语音处理上，它可以把一段语音信�
 <center><image src="./image/rnn_ap15.png" width="60%"></center>
 
 <center><image src="./image/rnn_ap16.png" width="60%"></center>
+=======
+>>>>>>> 773f7ea6bfb7f61c0c1a16cf3d1b70d8801540f3
