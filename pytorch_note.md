@@ -187,6 +187,26 @@ CNN的output后面接fc要在view里面 `out.view(out.size()[0], -1)`
 
 **model.train() 与 model.eval()的区别**
 
+> 主要是针对 BN 层和 Dropout 层
+
+**train时**添加`model.train()`。
+
+model.train()是保证BN层能够用到每一批数据的均值和方差。对于Dropout，model.train()是随机取一部分网络连接来训练更新参数。
+
+**validation和test时**添加  `model.eval()`
+
+dropout层会让所有的激活单元都通过，而BN层会停止计算和更新mean和var，直接使用在训练阶段已经学出的mean和var值。
+
+
+
+**model.eval()和torch.no_grad()的区别**
+
+> 主要针对在test计算loss时，是否计算gradient
+
+`model.eval()`不会影响各层的gradient计算行为，即gradient计算和存储与training模式一样，只是不进行反向传播（back probagation)。
+
+`with torch.no_grad()` 则主要是用于停止autograd模块的工作，以起到加速和节省显存的作用
+
 
 
 ## Train
@@ -195,7 +215,9 @@ CNN的output后面接fc要在view里面 `out.view(out.size()[0], -1)`
 >
 > 1. loss 
 > 2. optimizer
-> 3.  train
+> 3. scheduler
+> 4.  train
+> 5. save
 
 ### loss
 
@@ -206,6 +228,14 @@ CNN的output后面接fc要在view里面 `out.view(out.size()[0], -1)`
 ### optimizer
 
 ` torch.optim.Adam(model.parameters(), lr=0.001)` + `optimizer.step()  `**step是更新参数，根据backward获得的gradient**
+
+
+
+### scheduler
+
+`scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 350 * 50, eta_min=1e-6)` +`scheduler.step`
+
+更新optimizer的步长
 
 
 
@@ -221,7 +251,18 @@ CNN的output后面接fc要在view里面 `out.view(out.size()[0], -1)`
 
 
 
+**注意点**
 
+* 使用 validation set 来评价参数模型的好坏，找好参数以后还要把validaiton也放进去重新训练过
+* 
+
+
+
+### save
+
+save : ` torch.save(model.state_dict(), 'xxx.model')`
+
+load : `model.load_state_dict(torch.load('xxx.model'))`
 
 
 
