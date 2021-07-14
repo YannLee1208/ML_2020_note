@@ -213,3 +213,233 @@ GRU的效果和LSTM差不多，但是少了1/4的参数
 
 ## Learning Target
 
+<<<<<<< HEAD
+> 如何训练RNN
+
+### Loss Function
+
+仍然是Slot Filling. 给我们一些sentence，然后给sentence一些label. 然后输出 $y_i$ 与映射到slot的reference vector求交叉熵，比如“Taipei”对应到的是“dest”这个slot，则reference vector在“dest”位置上值为1，其余维度值为0.  **Loss Function 就是交叉熵之和**。
+
+ 但是在扔 Tapei之前一定要把 arrive先输入，不能把sentence打乱丢入.
+
+
+
+<center><image src="./image/rnn_loss.png" width="60%"></center>
+
+### Training
+
+> 使用Gradient Decent
+
+和DNN一样，使用梯度下降，进行 Backpropagation.  但是这里不是简单的BackPropagation，此处提出了一个
+
+**Backpropagation through time(BPTT)**
+
+<center><image src="./image/rnn_bptt.png" width="60%"></center>
+
+不幸的是，RNN的traning是比较难的。一般来说Loss应该是随training下降的，但是对于RNN，有可能loss剧烈抖动，并且会在某个时刻跳到无穷大，导致程序运行失败
+
+<center><image src="./image/rnn_train.png" width="60%"></center>
+
+
+
+### Error Surface
+
+RNN的随参数变化的error surface是非常陡峭的. 有的地方很平坦有的地方很陡峭。
+
+假设我们从橙色开始使用gradient decent，一不小心跳到悬崖上面，loss就会巨大。更不妙的是，一下跳到了悬崖上，gradient暴增，同时learning rate很大，结果参数就爆炸了，出现了nan。
+
+怎么办呢？
+
+使用clipping。就是当gradient超过一个阈值时，就设置gradient为阈值。
+
+<center><image src="./image/rnn_error.png" width="60%"></center>
+
+但是为什么RNN会这样？
+
+有人说是因为sigmoid，但是实际上不是的，使用Relu仍然会有这个问题。而且使用Relu会使RNN效果变差。
+
+这里有一个很直观的解释。我们将一个参数进行小小的变化看output的变化就可以预测出gradient大概的大小。
+
+
+
+假设network输入是 [1, 0, 0, ...]。 输出是 $w^{999}$, 因为别的input都是0没有用，只有第一个input在一直传播。
+
+- 当$w$从1->1.01，得到的$y^{1000}$就从1变到了20000，这表示$w$的梯度很大，需要调低学习率
+- 当$w$从0.99->0.01，则$y^{1000}$几乎没有变化，这表示$w$的梯度很小，需要调高学习率
+- 从中可以看出gradient时大时小，error surface很崎岖，尤其是在$w=1$的周围，gradient几乎是突变的，这让我们很难去调整learning rate
+
+<center><image src="./image/rnn_prob.png" width="60%"></center>
+
+实际上本质上是因为 RNN把同样的操作在训练过程中，不同的时间点不断使用。
+
+从memory接到neuron输入的参数$w$，在不同的时间点被反复使用，$w$的变化有时候可能对RNN的输出没有影响，而一旦产生影响，经过长时间的不断累积，该影响就会被放得无限大，因此RNN经常会遇到这两个问题：
+
+- 梯度消失(gradient vanishing)，一直在梯度平缓的地方停滞不前
+- 梯度爆炸(gradient explode)，梯度的更新步伐迈得太大导致直接飞出有效区间
+
+
+
+### Helpful Techniques
+
+**Long Short-term Memory(LSTM)**
+
+可以解决gradient vanishing，它会把error surface上那些比较平坦的地方拿掉。
+
+为什么要把RNN换成LSTM？A：LSTM可以解决梯度消失的问题
+
+Q：为什么LSTM能够解决梯度消失的问题？
+
+A：RNN和LSTM对memory的处理其实是不一样的：
+
+- 在RNN中，每个新的时间点，memory里的旧值都会被新值所覆盖
+- 在LSTM中，每个新的时间点，memory里的值会乘上$f(g_f)$与新值相加
+
+对RNN来说，$w$对memory的影响每次都会被清除，而对LSTM来说，除非forget gate被打开，否则$w$对memory的影响就不会被清除，而是一直累加保留，因此它不会有梯度消失的问题。实际上最早的LSTM并没有forget gate，就是为了解决梯度消失的问题。
+
+但是不能解决gradient explode。因此我们可以放心的把 LR 设置的很小。
+
+<center><image src="./image/rnn_sol.png" width="60%"></center>
+
+GRU只有两个gate，需要的参数量比LSTM少，鲁棒性比LSTM好，不容易过拟合，它的基本精神是旧的不去，新的不来，GRU会把input gate和forget gate连起来，当forget gate把memory里的值清空时，input gate才会打开，再放入新的值。只有清空memory的值才能放入新的值。
+
+此外，还有很多技术可以用来处理梯度消失的问题，比如Clockwise RNN、SCRN等
+
+<center><image src="./image/rnn_sol2.png" width="60%"></center>
+
+
+
+### More application
+
+> 在slot filling中，input一个vector输出也是一个vector，但是实际上还有很多别的应用
+
+* Many to one
+
+Input vector sequence, output only one vector.
+
+
+
+#### Sentiment Analysis 
+
+判断文章是Postive和Negative. 
+
+<center><image src="./image/rnn_ap1.png" width="60%"></center>
+
+
+
+**Key Term Extraction**
+
+把document当作一个sequence, 通过最后一个时刻的输出当作输出
+
+<center><image src="./image/rnn_ap2.png" width="60%"></center>
+
+* Many to Many
+
+Input和output都是sequence，但是output更短
+
+
+
+**Speech Recognition**
+
+以语音识别为例，输入是一段声音信号，每隔一小段时间就用1个vector来表示，因此输入为vector sequence，而输出则是character vector
+
+如果依旧使用Slot Filling的方法，只能做到每个vector对应1个输出的character，识别结果就像是下图中的“好好好棒棒棒棒棒”，但这不是我们想要的，可以使用Trimming的技术把重复内容消去，剩下“好棒”
+
+<center><image src="./image/rnn_ap3.png" width="60%"></center>
+
+但“好棒”和“好棒棒”实际上是不一样的，如何区分呢？
+
+需要用到CTC算法，它的基本思想是，输出不只是字符，还要填充NULL，输出的时候去掉NULL就可以得到连词的效果.
+
+<center><image src="./image/rnn_ap4.png" width="60%"></center>
+
+CTC如何训练呢？
+
+训练的时候不要告诉你哪些声音对应的是 “好”，哪些是 null。因此我们罗列所有的可能都放进去训练。
+
+<center><image src="./image/rnn_ap5.png" width="60%"></center>
+
+
+
+#### Sq2Sq
+
+Input和Output都是Sq，但是长度并不确定。
+
+**Machine Translation**
+
+假设输入是 machine learning，要翻译成中文。最后一个时刻的memory就包含了所有的information ，接下来让RNN输出，就会得到“机”，把“机”当做input，并读取memory里的值，就会输出“器”，依次类推，这个RNN甚至会一直输出，不知道什么时候会停止
+
+<center><image src="./image/rnn_ap6.png" width="60%"></center>
+
+怎样才能让机器停止输出呢？
+
+可以多加一个叫做“断”的symbol “===”，当输出到这个symbol时，机器就停止输出
+
+<center><image src="./image/rnn_ap7.png" width="60%"></center>
+
+现在google正在试直接将一种语言的语音转成别的语言的文字，不做语音识别的转换。
+
+
+
+#### Beyond Sequence
+
+**Syntactic Parsing Tree**
+
+让machine看一个句子，得到一颗结构树
+
+<center><image src="./image/rnn_ap8.png" width="60%"></center>
+
+
+
+#### Sq2Sq Auto-Encoder
+
+为了理解一句话的meaning，如果用bag-of-word来表示一篇文章，就很容易丢失词语之间的联系，丢失语序上的信息
+
+比如“白血球消灭了感染病”和“感染病消灭了白血球”，两者bag-of-word是相同的，但语义却是完全相反的
+
+<center><image src="./image/rnn_ap9.png" width="60%"></center>
+
+这里就可以使用Seq2Seq Autoencoder，在考虑了语序的情况下，把文章编码成vector，只需要把RNN当做编码器和解码器即可
+
+我们输入word sequence，通过RNN变成embedded vector，再通过另一个RNN解压回去，如果能够得到一模一样的句子，则压缩后的vector就代表了这篇文章中最重要的信息
+
+<center><image src="./image/rnn_ap10.png" width="60%"></center>
+
+这个结构甚至可以被层次化，我们可以对句子的几个部分分别做vector的转换，最后合并起来得到整个句子的vector
+
+<center><image src="./image/rnn_ap11.png" width="60%"></center>
+
+
+
+##### Seq2Seq for Auto-encoder Speech
+
+Seq2Seq autoencoder还可以用在语音处理上，它可以把一段语音信号编码成vector
+
+这种方法可以把声音信号都转化为低维的vecotr，并通过计算相似度来做语音搜索
+
+<center><image src="./image/rnn_ap13.png" width="60%"></center>
+
+怎么训练？
+
+经过一个RNN以后，存在memory中的就是最终的information。
+
+但是只有Encoder没用，还得有一个Decoder。Encoder中的Memory中的当作input给Decoder，希望Decoder的结果能够和Input越像越好。
+
+<center><image src="./image/rnn_ap14.png" width="60%"></center>
+
+**Demo : Chat Bot**
+
+收集很多的对话，把Q当作Encoder的Input，A当作Decoder的Output
+
+
+
+### Attention-Based Model
+
+除了RNN之外，Attention-based Model也用到了memory的思想
+
+机器会有自己的记忆池，神经网络通过操控读写头去读或者写指定位置的信息，这个过程跟图灵机很像，因此也被称为neural turing machine
+
+<center><image src="./image/rnn_ap15.png" width="60%"></center>
+
+<center><image src="./image/rnn_ap16.png" width="60%"></center>
+=======
+>>>>>>> 773f7ea6bfb7f61c0c1a16cf3d1b70d8801540f3
