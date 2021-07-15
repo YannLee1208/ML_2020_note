@@ -13,7 +13,7 @@
 
 **Supervised和Semi-supervised的区别**
 
-Supervised Learning : $\left\{ (x^r, \hat y^r) \right\}_{r=1}^R$
+Supervised Learning : $\left\{ (x^r, \hat y^r) \right\}_{r=1}^R $
 
 * E.g $x^r$ : image, $\hat y^r$ : class labels
 
